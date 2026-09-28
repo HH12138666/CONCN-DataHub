@@ -497,7 +497,7 @@ class MySQLIntegration(unittest.TestCase):
         self.assertEqual(data.data, payload[:10])
         self.assertEqual(data.headers["Content-Range"], f"bytes 0-9/{len(payload)}")
         expected_date=(now()+timedelta(hours=8)).strftime('%Y%m%d')
-        self.assertIn(f'CONCN_datahub_{A}_{expected_date}.zip',data.headers['Content-Disposition'])
+        self.assertIn(f'ParFlow_CONCN_Share_Platform_{A}_{expected_date}.zip',data.headers['Content-Disposition'])
         self.assertEqual(self.client.get(url).data, payload)
         self.assertEqual(self.other.get(url).status_code, 410)
         self.assertEqual(self.other.get("/api/jobs/" + j).status_code, 404)

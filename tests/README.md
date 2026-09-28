@@ -1,14 +1,16 @@
-# 现有回归测试
+# 回归测试
 
-在仓库根目录执行：
+在项目根目录激活 `concnshare` 后运行。临时文件留在项目目录内，后端测试限定 60 秒：
 
-```powershell
-.venv\Scripts\python.exe -m unittest discover -s tests -v
+```bash
+conda activate concnshare
+mkdir -p .local/test-tmp
+TMPDIR="$PWD/.local/test-tmp" timeout 60s python -B -m unittest discover -s tests -v
+node --test frontend/tests/*.test.js
 ```
 
-- `backend/`：19 项实际 MySQL 集成测试、2 项边界预览测试、1 项发布完整性测试，覆盖名额、并发、审核、越权、下载及变更后的源文件拒绝处理。
-- `clipping/`：5 项测试，覆盖编码、分级、命名、配置及裁切网格和南北方向的逐像元核对。
+`backend/` 覆盖 MySQL 业务、权限、任务、边界、包内容和发布完整性；`clipping/` 覆盖科学参数、网格和裁切编排；前端测试位于 `frontend/tests/`。
 
-网站测试会清空并重建 **`concn_datahub_test`** 的测试记录，只能在专用、可丢弃的本地测试库执行。测试禁止使用其他数据库名；不要将真实数据放入该测试库。连接参数读取 `backend/.env`，测试只覆盖数据库名及测试选项。
+后端集成测试清空并重建专用 **concn_datahub_test** 中的测试记录，不使用正式 concn_datahub 数据库。连接参数从 backend/.env 读取，测试覆盖数据库名。不要将真实数据放进测试库。
 
-这套回归测试使用合成流域和 ZIP，不会向正式目录插入演示流域。另已通过 `scripts/verify_local_download.py` 对本地真实数据执行 HTTP 下载验收，记录见 [本地真实下载验收](../docs/本地真实下载验收.md)。暂时没有完整浏览器端到端测试套件。
+自动化单元/集成测试中的合成数据不能替代真实科学输出验证。真实裁切和浏览器验收方法见 [测试与验证](../docs/测试与验证.md)。

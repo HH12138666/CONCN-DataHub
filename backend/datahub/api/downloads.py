@@ -219,7 +219,7 @@ def transfer(session_id):
         "Content-Length": str(end - start + 1),
         "Accept-Ranges": "bytes",
         "ETag": etag,
-        "Content-Disposition": f'attachment; filename="CONCN_datahub_{j["basin_code"]}_{(now() + timedelta(hours=8)).strftime("%Y%m%d")}.zip"',
+        "Content-Disposition": f'attachment; filename="ParFlow_CONCN_Share_Platform_{j["basin_code"]}_{(now() + timedelta(hours=8)).strftime("%Y%m%d")}.zip"',
         "Cache-Control": "private, no-store",
     }
     if status == 206:

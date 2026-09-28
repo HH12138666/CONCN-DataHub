@@ -4,7 +4,7 @@
       <el-header height="80px" class="header">
         <div class="header-left">
           <div class="logo">
-            <img src="/new_logo.jpeg" alt="CONCN DataHub" style="height: 60px; vertical-align: middle;" />
+            <img src="/new_logo.jpeg" alt="ParFlow CONCN Share Platform" style="height: 60px; vertical-align: middle;" />
           </div>
         </div>
 

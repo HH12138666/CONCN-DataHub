@@ -1,1 +1,1 @@
-"""CONCN DataHub MySQL service."""
+"""ParFlow CONCN Share Platform MySQL service."""

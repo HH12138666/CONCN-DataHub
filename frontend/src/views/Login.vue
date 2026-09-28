@@ -2,7 +2,7 @@
   <div class="login-container">
     <div class="login-box">
       <div class="login-header">
-        <img src="/new_logo.jpeg" alt="CONCN DataHub" class="logo-img" />
+        <img src="/new_logo.jpeg" alt="ParFlow CONCN Share Platform" class="logo-img" />
       </div>
 
       <el-tabs v-model="activeTab" @tab-click="handleTabClick">

@@ -1,53 +1,161 @@
-# CONCN DataHub
+# ParFlow CONCN Share Platform
 
-基于 Vue、Flask、MySQL 的 ParFlow 流域数据共享平台，支持流域地图、注册登录、申请审核、异步裁切和授权下载。当前代码来自原 ParFlow-CONCN 共享平台并持续改造，保留科学工具来源信息。
+面向中国大陆尺度 ParFlow-CONCN 模型的流域数据共享与裁切平台。通过网页浏览和检索流域，按授权生成并下载输入数据；也可独立使用 Python 工具执行科学裁切。
 
-## 功能
+[快速开始](#快速开始) · [科学裁切](docs/科学裁切工具说明.md) · [部署指南](docs/部署说明-v1.0.md) · [文档目录](docs/README.md)
 
-- 默认中文，可切换英文；省市定位、七级流域地图和14位编号精确搜索。
-- 每账号免审核获取两个不同小流域编码，同编码可重复下载；大流域和额外小流域可申请审核。
-- 下载用途填写、后台任务、个人下载/申请/通知、管理员账号搜索及内容管理。
-- 当前数据版本 concn1.1，完整ZIP包含10个数据及元信息文件。
+## 模型与数据
 
-## 项目目录
+**本平台用于共享中国大陆尺度ParFlow-CONCN模型。**
 
-| 目录 | 用途 |
-|---|---|
-| frontend | Vue网页、地图和管理页面 |
-| backend | Flask API、MySQL业务、后台队列 |
-| concnshare | ParFlow科学裁切工具 |
-| database | 新数据库结构、迁移及默认规则 |
-| tests | 后端、裁切及前端测试（前端测试位于frontend/tests） |
-| scripts | 本地启动、工具构建、目录导入等脚本 |
-| docs | 需求、功能说明、API、数据库和运维文档 |
-| deploy | 部署注意事项 |
-| Fig | 科学说明中引用的示意图 |
+ParFlow-CONCN 1.0模型是约1公里水平分辨率，纵深492m的地表水-地下水集成水文模型。
 
-## 获取代码后需要准备
+当前完整下载包包含五类 PFB（slopex、slopey、bedrock、manning、subsurface）、两种掩膜、PFSOL、VTK 和元信息，共 10 个文件；不包含初始压力场、气象强迫或完整 ParFlow 模拟配置。
 
-本仓库不包含源数据、数据库内容、账号密码、天地图密钥、Python虚拟环境、node_modules、运行缓存或下载ZIP。仅克隆源码不会恢复原机器的账号和数据。
+## 引用
 
-1. 准备Python、Node.js和MySQL，具体依赖见 backend/requirements 和 frontend/package.json。
-2. 创建Python虚拟环境，安装 backend/requirements/web.txt；运行裁切还需 worker.txt 中的科学依赖及 pfmask-to-pfsol。
-3. 按 backend/.env.example 配置本地 backend/.env；前端按 frontend/.env.example 创建本地配置。不得提交真实.env。
-4. 全新数据库按 database/README.md 和后端CLI初始化并导入目录。已有数据库不要重复bootstrap。
-5. 科学源数据单独传输并配置路径。跨Windows/Linux需重新构建并验证科学工具，不能直接使用Windows可执行文件。
-6. 在frontend运行 npm ci 和 npm run build。后端 app.py 提供生产构建页面与API，后台裁切另运行 python -m datahub.workers.queue。
+若使用本工具及生成文件开展研究，请引用：
 
-当前开发电脑在根目录运行 ./scripts/start-local.ps1。默认新环境后端端口8000；本机已配置8100。前端5173代理地址通过 VITE_API_TARGET 配置，与后端端口保持一致。局域网入口使用实际服务器IP，127.0.0.1只用于本机。
+Yang C, Jia ZT, Xu WJ, Wei ZW, Zhang XL, Zou YG, Mcdonnell JJ, Condon LE, Dai YJ, Maxwell RM, 2025. CONCN: a high-resolution, integrated surface water-groundwater ParFlow modeling platform of continental China. Hydrology and Earth System Sciences, 29(9): 2201-2218.
+
+## CONCN 流域分级
+
+CONCN流域分级使用 14 位固定编码体系来表示，每升一级增加 2 位有效数字，剩余位数以 0 填充。
+
+需注意的是，当前 CONCN 流域分级边界与实际自然流域边界存在一定差异（如长江流域、淮河流域）。这是因为分级过程中使用了 HydroBASINS 和 MERIT Basins 等外部流域数据进行辅助划分，而这些数据集在流域边界刻画和河网汇流关系表达上与实际情况存在差异。
+
+![PFBAS2 basins](Fig/pfbas2_basins.png)
+
+| 级别 | 有效位数 | 流域数量 | 说明 |
+|------|----------|----------|------|
+| PFBAS2 | 2 位 | 10 个 | 一级流域 |
+| PFBAS4 | 4 位 | 127 个 | 二级子流域 |
+| PFBAS6 | 6 位 | 367 个 | 三级子流域 |
+| PFBAS8 | 8 位 | 1,215 个 | 四级子流域 |
+| PFBAS10 | 10 位 | 3,988 个 | 五级子流域 |
+| PFBAS12 | 12 位 | 12,118 个 | 六级子流域 |
+| PFBAS14 | 14 位 | 53,040 个 | 七级子流域  |
+
+| 级别 | 有效位数 | 编码示例 | 说明 |
+|------|---------|---------|------|
+| PFBAS2 | 2位 | `01000000000000` | 第1个一级流域 |
+| PFBAS4 | 4位 | `01020000000000` | 01流域的第2个子流域 |
+| PFBAS6 | 6位 | `01020300000000` | 0102流域的第3个子流域 |
+| PFBAS8 | 8位 | `01020301000000` | 010203流域的第1个子流域 |
+| PFBAS10 | 10位 | `01020301040000` | 01020301流域的第4个子流域 |
+| PFBAS12 | 12位 | `01020301040500` | 0102030104流域的第5个子流域 |
+| PFBAS14 | 14位 | `01020301040506` | 010203010405流域的第6个子流域 |
+
+## 平台功能
+
+- **流域浏览**：七级流域地图、14 位编码精确搜索、省市定位、流域高亮和属性查看。
+- **地图显示**：默认地形底图，可切换标准地图，支持中英文界面。
+- **科学裁切**：生成流域掩膜，裁切五类 PFB，调用 pfmask-to-pfsol 生成计算域文件。
+- **异步下载**：独立 worker 处理任务，提供状态查询、取消、授权下载和过期管理。
+- **账号与审核**：注册登录、下载用途填写、申请审批、通知、用户及内容管理。
+
+默认共享规则允许每个账号免审核获取两个不同的小流域编码；大流域和额外小流域通过申请审核获取。阈值及规则以部署实例配置为准，详见 [网站功能使用说明](docs/网站功能使用说明.md)。
+
+## 快速开始
+
+源码仓库不包含科学源数据、业务数据库、账号凭据或地图密钥。运行科学裁切需另行准备 PFB、流域边界、模板栅格和 Linux pfmask-to-pfsol；部署完整网站还需 MySQL、Node.js 和前端配置。
+
+### 准备 Python 环境
+
+在项目根目录执行：
+
+```bash
+conda env create -f environment.yaml
+conda activate concnshare
+```
+
+environment.yaml 创建 Python 3.12 环境并安装科学依赖和 concnshare 包。若只使用独立裁切工具，无需启动 MySQL 或网页服务。
+
+### 使用独立裁切工具
+
+先将以下示例路径替换为实际文件位置：
+
+```bash
+export CONCN_SHP_DIR=/path/to/data/PFBAS/shp
+export CONCN_TIF_DIR=/path/to/data/PFBAS/geotiff
+export CONCN_INPUT_PFB_DIR=/path/to/data/inputs
+export PARFLOW_PFMASK_CMD=/path/to/parflow/bin/pfmask-to-pfsol
+
+python -m concnshare.run_two 03030109050100 --output-dir ./outputs
+```
+
+编号需存在于源边界数据中。结果写入 outputs/流域编号/；独立 CLI 生成科学文件，不创建网站任务或 ZIP。已有同名输出目录时默认拒绝覆盖。参数、掩膜处理和元信息说明见 [科学裁切工具说明](docs/科学裁切工具说明.md)。集群环境中的任务应按其调度规范运行。
+
+### 部署完整网站
+
+网站由 Vue 前端、Flask/Waitress 后端、MySQL 与独立 worker 组成。
+
+1. 安装网站及 worker 依赖：`python -m pip install -r backend/requirements/worker.txt`。
+2. 准备 MySQL 和符合 [frontend/package.json](frontend/package.json) 要求的 Node.js。
+3. 按 [部署指南](docs/部署说明-v1.0.md) 初始化全新业务库并配置 backend/.env；继承已有站点则按 [交接指南](docs/数据库继承与部署交接.md) 恢复数据库与文件，不重复 bootstrap。
+4. 配置科学路径和 frontend/.env.local，完成流域目录与数据版本发布。
+5. 安装前端依赖并构建网页：
+
+```bash
+npm --prefix frontend ci
+bash scripts/run-linux.sh build
+```
+
+在已激活 concnshare 的两个终端，从项目根目录分别启动网站和 worker：
+
+```bash
+# 终端一：网站与 API
+bash scripts/run-linux.sh web
+```
+
+```bash
+# 终端二：裁切任务处理
+bash scripts/run-linux.sh worker
+```
+
+网站默认本机入口为 http://127.0.0.1:8000，实际监听与访问地址由配置决定。使用 `bash scripts/run-linux.sh check` 检查健康状态。后台运行、停止、HTTPS、邮件和网络访问见 [部署指南](docs/部署说明-v1.0.md)。
+
+## 下载包
+
+网站生成的 ZIP 以流域编号为内部目录，包含五个裁切 PFB、mask.tif、mask.pfb、PFSOL、VTK 和 metadata.json，共 10 个文件。实际文件名带有流域编号，规范见 [下载包内容](docs/下载包内容与文字维护.md)。
+
+数据库记录业务信息和文件索引，科学源数据和 ZIP 保存在文件系统。迁移网站时需要分别交付源码、数据库和必要数据文件。
+
+## 项目结构
+
+| 路径 | 职责 |
+| --- | --- |
+| `concnshare/` | 独立科学裁切工具与参数配置 |
+| `frontend/` | Vue 网页、地图、账号与管理界面 |
+| `backend/` | Flask API、权限、数据库访问和任务 worker |
+| `database/` | 数据库结构迁移及默认数据脚本 |
+| `scripts/` | Linux 启动、健康检查和目录导入 |
+| `tests/` | Python 后端与科学工具测试；前端测试位于 frontend/tests |
+| `docs/` | 部署、使用、接口、数据库及维护说明 |
+| `deploy/` | 部署文档入口 |
+| `Fig/` | 科学说明图片 |
+
+逐文件说明见 [项目结构与文件说明](docs/项目结构与文件说明.md)。
 
 ## 文档
 
-- [需求规格说明书](docs/需求规格说明书.md)
-- [网站功能使用说明](docs/网站功能使用说明.md)
-- [后端API接口文档](docs/后端API接口文档.md)
-- [数据库逐字段说明](docs/数据库逐字段说明-v1.0.md)
-- [下载包内容](docs/下载包内容与文字维护.md)
-- [后端](backend/README.md)、[前端](frontend/README.md)、[测试](tests/README.md)
-- [文档目录](docs/README.md)、[源码发布说明](docs/源码发布说明.md)
+| 目标 | 文档 |
+| --- | --- |
+| 使用网页查询和下载 | [网站功能使用说明](docs/网站功能使用说明.md) |
+| 运行科学裁切 | [科学裁切工具说明](docs/科学裁切工具说明.md) |
+| 部署或交接网站 | [部署说明](docs/部署说明-v1.0.md)、[数据库继承与部署交接](docs/数据库继承与部署交接.md) |
+| 理解业务和接口 | [需求规格](docs/需求规格说明书.md)、[后端 API](docs/后端API接口文档.md)、[数据库说明](docs/数据库说明.md) |
+| 测试及维护 | [测试与验证](docs/测试与验证.md)、[维护与优化](docs/维护与优化文档-v1.0.md) |
+| 准备源码发布 | [源码发布说明](docs/源码发布说明.md) |
 
-## 来源与部署边界
+更多说明见 [文档目录](docs/README.md)。
 
-原始项目：https://github.com/ParFlowCommunity/ParFlow-CONCN-Share-Platform 。科学工具作者及来源声明保留；本次整理没有替上游或数据新增授权条款，具体使用许可请以原作者和数据提供者声明为准。
+## 问题反馈与贡献
 
-公网服务器、HTTPS、SMTP及正式数据许可仍需按实际环境配置验收。将代码上传GitHub不等于网站已经上线，也不包含数据发布。
+欢迎通过仓库 Issues 反馈问题，通过 Pull Request 提交修复或文档改进。报告问题时提供复现步骤、运行环境和脱敏错误信息，不附账号密码、密钥或用户业务数据。涉及接口、科学输出或部署方式的修改，应同步更新对应文档并执行相关测试。
+
+## 来源与使用许可
+
+项目仓库：[ParFlowCommunity/ParFlow-CONCN-Share-Platform](https://github.com/ParFlowCommunity/ParFlow-CONCN-Share-Platform)。底层模型与工具参见 [ParFlow](https://github.com/parflow/parflow)。
+
+使用本项目时保留相关作者和来源声明。源码与科学数据的授权范围需分别确认；文献引用不替代许可，依赖库和外部地图服务遵循各自条款。

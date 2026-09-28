@@ -15,3 +15,7 @@ test('search and clicked basins retain different colors; older clicks reset',()=
   state.clickHighlightId='search';
   assert.equal(methods.styleFor.call(state,'search').fillColor,'#35a774');
 });
+
+test('map starts with terrain selected', () => {
+  assert.equal(context.definition.data().mapType, 'terrain');
+});

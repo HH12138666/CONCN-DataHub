@@ -1,5 +1,10 @@
 <template>
-  <div ref="mapContainer" class="map-container" @mouseleave="mouseLng=null;mouseLat=null">
+  <div class="map-container" @mouseleave="mouseLng=null;mouseLat=null">
+    <div ref="mapContainer" class="map-canvas"></div>
+    <div v-if="mapLoading || mapError" class="map-load-status" role="status" @click.stop>
+      <span>{{ mapError || tr('正在加载地图，请稍候…', 'Loading map…') }}</span>
+      <button v-if="mapError" type="button" @click="initMap">{{ tr('重试', 'Retry') }}</button>
+    </div>
     <div v-if="scale" class="map-scale" :aria-label="tr('比例尺','Scale')"><div class="scale-line" :style="{width:scale.width+'px'}"></div><span>{{scale.text}}</span></div>
     <div class="map-coordinates">{{tr('经度','Longitude')}}: {{coordinate(mouseLng,'lng')}}　{{tr('纬度','Latitude')}}: {{coordinate(mouseLat,'lat')}}</div>
     <label class="map-type-control" @click.stop @dblclick.stop @mousedown.stop @wheel.stop>
@@ -54,10 +59,12 @@ export default {
   data() {
     return {
       map: null,
+      mapLoading: false,
+      mapError: "",
       mouseLng:null,mouseLat:null,scale:null,
       boundaryOverlays: [],    // 已添加的边界多边形（T.Polygon）
       renderTimer: null,       // 分批渲染定时器（大级别防止一次性创建数万多边形卡死）
-      mapType: 'standard',
+      mapType: 'terrain',
       baseLayers: [],
       _clickFid: null,         // 当前点击高亮的流域 id（点击高亮, 与搜索高亮相互覆盖）
       _skipNextHighlightRender: false, // 点击高亮后跳过父组件同步 highlightIds 触发的重渲染
@@ -105,12 +112,12 @@ export default {
   },
   methods: {
     async initMap() {
-      T = await loadMapProvider();
-      if (!this.$refs.mapContainer || typeof T === 'undefined') {
-        console.error('地图容器未找到或天地图 API 未加载');
-        return;
-      }
+      if (this.mapLoading) return;
+      this.mapLoading = true;
+      this.mapError = '';
       try {
+        T = await loadMapProvider();
+        if (!this.$refs.mapContainer) return;
         // 1. 创建地图实例
         //    maxZoom=18（天地图瓦片最高 18 级，超过会瓦片缺失出现白屏）、
         //    minZoom=3（防止缩放过远整屏无瓦片）
@@ -139,6 +146,12 @@ export default {
         if (this.boundaryData) this.renderBoundaries(this.boundaryData);
       } catch (error) {
         console.error('地图初始化失败:', error);
+        this.mapError = error.message;
+        this.clearBoundaries();
+        if (this.map) this.map.dispose();
+        this.map = null;
+      } finally {
+        this.mapLoading = false;
       }
     },
 
@@ -316,6 +329,9 @@ export default {
 </script>
 
 <style scoped>
+.map-canvas { width: 100%; height: 100%; min-height: 400px; }
+.map-load-status { position: absolute; z-index: 1100; top: 60px; left: 12px; right: 12px; padding: 12px; background: white; color: #303133; border: 1px solid #dcdfe6; }
+.map-load-status button { margin-left: 12px; cursor: pointer; }
 .map-container {
   width: 100%;
   height: 100%;

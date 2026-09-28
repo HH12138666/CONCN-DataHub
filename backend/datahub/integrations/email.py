@@ -29,7 +29,7 @@ def issue_email_action(user_id, address, purpose):
     msg = EmailMessage()
     msg["From"] = os.environ["SMTP_FROM"]
     msg["To"] = address
-    msg["Subject"] = "CONCN DataHub · 邮箱操作 / Email action"
+    msg["Subject"] = "ParFlow CONCN Share Platform · 邮箱操作 / Email action"
     msg.set_content(
         "请在 30 分钟内打开链接完成操作。如非本人申请，请忽略。\nOpen within 30 minutes. Ignore if you did not request this.\n"
         + link

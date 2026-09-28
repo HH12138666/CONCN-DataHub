@@ -1,4 +1,4 @@
--- CONCN DataHub schema v1, target: MySQL 8.4 / InnoDB.
+-- ParFlow CONCN Share Platform schema v1, target: MySQL 8.4 / InnoDB.
 -- Run once in a NEW, explicitly selected database. No DROP / TRUNCATE.
 -- Application and migration connections must use UTC and strict SQL mode.
 -- Status transitions, role checks and authorization expiry require service logic.

@@ -1,12 +1,10 @@
-# CONCN DataHub 后端 API 接口文档
-
-版本：1.1　更新日期：2026-09-14。根据 backend/datahub/api、services、security 当前代码编写。本文描述已实现接口，不表示提供公共第三方开放 API 或固定兼容性承诺。
+# ParFlow CONCN Share Platform 后端 API 接口文档
 
 ## 1. 通用约定
 
 ### 1.1 地址、格式与认证
 
-本地示例基地址：`http://127.0.0.1:8100`。生产环境使用实际网站来源，以下路径均包含 `/api`。普通请求/响应为 UTF-8 JSON；边界接口返回 GeoJSON，文件接口返回 ZIP 字节流。
+本地示例基地址：`http://127.0.0.1:8000`。生产环境使用实际网站来源，以下路径均包含 `/api`。普通请求/响应为 UTF-8 JSON；边界接口返回 GeoJSON，文件接口返回 ZIP 字节流。
 
 所有 POST、PUT 等写请求必须携带 `X-DataHub: 1`；发送 JSON 时携带 `Content-Type: application/json`。Origin 若存在，必须与配置 PUBLIC_URL 来源或当前请求网站来源一致。缺少防跨站头或来源不匹配返回 403 CSRF_REJECTED。请求体最大 1 MiB。
 
@@ -162,7 +160,7 @@ access_mode：small 或 approved_large（含获批小流域）。任务状态见
 需要任务属于本人且 succeeded、文件仍可用、数据版本仍共享、相关授权仍有效。成功200：
 
 ```json
-{"url":"/api/files/0123456789abcdef0123456789abcdef","expires_at":"2026-09-14T09:00:00Z"}
+{"url":"/api/files/0123456789abcdef0123456789abcdef","expires_at":"2030-01-01T00:00:00Z"}
 ```
 
 同时设置 HttpOnly Cookie `download_<session_id>`，Path 为返回文件路径。有效期最多1小时，并受归档及申请有效期上限约束。URL不含秘密令牌；不能仅复制URL到别人的浏览器下载。签发会话时小流域预留资格成为 active。
@@ -173,7 +171,7 @@ access_mode：small 或 approved_large（含获批小流域）。任务状态见
 
 完整GET返回200 application/zip；HEAD无正文但提供文件头。支持单段 Range：`bytes=0-1023`、`bytes=1024-`、`bytes=-1024`。有效范围返回206及Content-Range；无效或多段请求返回416及`Content-Range: bytes */文件大小`。If-Range匹配ETag才使用范围，否则返回完整内容。
 
-响应头：Content-Length、Accept-Ranges: bytes、ETag、Cache-Control: private, no-store、Content-Disposition。文件名格式为 `CONCN_datahub_编号_YYYYMMDD.zip`，北京时间日期取本次请求。归档或会话过期返回410 FILE_UNAVAILABLE。
+响应头：Content-Length、Accept-Ranges: bytes、ETag、Cache-Control: private, no-store、Content-Disposition。文件名格式为 `ParFlow_CONCN_Share_Platform_编号_YYYYMMDD.zip`，北京时间日期取本次请求。归档或会话过期返回410 FILE_UNAVAILABLE。
 
 传输开始与传输期间会检查授权/账号等状态；管理员撤销可能中断传输。已收到部分内容后不能期待一个完整JSON错误响应，客户端应按连接中断处理。
 
